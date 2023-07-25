@@ -8,10 +8,19 @@ from langchain.chat_models import ChatOpenAI
 
 os.environ["OPENAI_API_KEY"] = constants.APIKEY
 
-question = sys.argv[1]
+if len(sys.argv) > 1:
+    question = sys.argv[1]
+else:
+    print("Se debe indicar una pregunta.")
+    sys.exit(1) 
 
-loader = TextLoader('data.txt', encoding='utf8')
-llm = ChatOpenAI(model_name="gpt-3.5-turbo", temperature=0.8)
+from langchain.document_loaders import UnstructuredExcelLoader
+
+# loader = TextLoader('data.txt', encoding='utf8')
+# loader = UnstructuredExcelLoader("valia-qa.xlsx", mode="elements")
+from langchain.document_loaders import Docx2txtLoader
+loader = Docx2txtLoader('Valia-qa.docx',)
+llm = ChatOpenAI(model_name="gpt-3.5-turbo", temperature=1)
 
 # web_loader = WebBaseLoader("https://blog.valiapro.com/2-roles-esenciales-de-un-agente-inmobiliario-exitoso-0")
 # index = VectorstoreIndexCreator().from_loaders([loader, web_loader])
@@ -30,7 +39,7 @@ all_splits = text_splitter.split_documents(data)
 # Store 
 from langchain.vectorstores import Chroma
 from langchain.embeddings import OpenAIEmbeddings
-vectorstore = Chroma.from_documents(documents=all_splits,embedding=OpenAIEmbeddings())
+vectorstore = Chroma.from_documents(documents=all_splits, embedding=OpenAIEmbeddings())
 
 docs = vectorstore.similarity_search(question)
 
@@ -46,8 +55,12 @@ from langchain.chains import RetrievalQA, RetrievalQAWithSourcesChain
 #use promt template
 # Build prompt
 from langchain.prompts import PromptTemplate
-template = """Utiliza las siguientes pizas de contexto para responder a las pregunta, si no sabes una respuesta
-    no trates de contestarla, tan solo responde: "no lo se", se conciso, con respuestas cortas de maximo 10 oraciones.
+template = """Eres un chatbot asistente amistoso y educado. 
+    Utilizando la informacion proporcionada. Responde siempre de manera clara, directa, y muy concisa. Cuando te pregunten sobre algo, 
+    retorna el enlace correspondiente que más ayudará a responder la pregunta. 
+    Por ejemplo si te preguntan "¿Como subo 
+    una transacción?" responde "Aquí puedes ver un tutorial sobre como subir una transacción" y comparte el enlace correspondiente
+    Genera la respuesta como un texto html, utilizando un <p> para el texto, un <a> para el enlace y <strong> para lo que consideres necesario
     {context}
     Pregunta: {question}
     Respuesta:"""
@@ -67,7 +80,9 @@ chat = ConversationalRetrievalChain.from_llm(llm, retriever=vectorstore.as_retri
 
 result = chat({"question": question})
 
+answer = result['answer']
+
 print('result ---------------------------------------------------- ')
-print(result)
+print(answer)
 
 # print(response)
