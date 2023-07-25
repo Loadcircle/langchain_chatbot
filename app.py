@@ -6,7 +6,7 @@ from chatbot import chatbot
 app = Flask(__name__)
 
 class Config:
-    OPENAI_KEY = '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'
+    OPENAI_KEY = ''
     # Otras configuraciones de la aplicación
 
 app.config.from_object(Config)
