@@ -5,6 +5,7 @@ import constants
 from langchain.document_loaders import TextLoader, WebBaseLoader
 from langchain.indexes import VectorstoreIndexCreator
 from langchain.chat_models import ChatOpenAI
+from langchain.chains import ConversationalRetrievalChain
 
 os.environ["OPENAI_API_KEY"] = constants.APIKEY
 
@@ -19,7 +20,7 @@ from langchain.document_loaders import UnstructuredExcelLoader
 # loader = TextLoader('data.txt', encoding='utf8')
 # loader = UnstructuredExcelLoader("valia-qa.xlsx", mode="elements")
 from langchain.document_loaders import Docx2txtLoader
-loader = Docx2txtLoader('Valia-qa.docx',)
+loader = Docx2txtLoader('Valia-qa.docx')
 llm = ChatOpenAI(model_name="gpt-3.5-turbo", temperature=1)
 
 # web_loader = WebBaseLoader("https://blog.valiapro.com/2-roles-esenciales-de-un-agente-inmobiliario-exitoso-0")
@@ -56,15 +57,22 @@ from langchain.chains import RetrievalQA, RetrievalQAWithSourcesChain
 # Build prompt
 from langchain.prompts import PromptTemplate
 template = """Eres un chatbot asistente amistoso y educado. 
-    Utilizando la informacion proporcionada. Responde siempre de manera clara, directa, y muy concisa. Cuando te pregunten sobre algo, 
-    retorna el enlace correspondiente que más ayudará a responder la pregunta. 
-    Por ejemplo si te preguntan "¿Como subo 
-    una transacción?" responde "Aquí puedes ver un tutorial sobre como subir una transacción" y comparte el enlace correspondiente
-    Genera la respuesta como un texto html, utilizando un <p> para el texto, un <a> para el enlace y <strong> para lo que consideres necesario
+    Utilizando la informacion proporcionada. Responde siempre de manera clara, directa, y muy concisa. 
+    Cuando te pregunten sobre algo,retorna el enlace correspondiente que más ayudará a responder la pregunta. 
+    Por ejemplo si te preguntan "¿Como subo una transacción?" 
+    responde "Aquí puedes ver un tutorial sobre como subir una transacción" y comparte el enlace correspondiente
+    Genera la respuesta como un texto html, utilizando un <p> para el texto, un <a target="_blank"> para el enlace y <strong> para lo que consideres necesario
     {context}
     Pregunta: {question}
     Respuesta:"""
+
+template = """Utiliza la historia en memoria para responder las siguientes preguntas
+    {context}
+    Pregunta: {question}
+    Respuesta:"""
+# QA_CHAIN_PROMPT = PromptTemplate(input_variables=["context", "question"], template=template)
 QA_CHAIN_PROMPT = PromptTemplate(input_variables=["context", "question"], template=template)
+print(QA_CHAIN_PROMPT)
 
 # llm = ChatOpenAI(model_name="gpt-3.5-turbo", temperature=0)
 # qa_chain = RetrievalQA.from_chain_type(llm, retriever=vectorstore.as_retriever(), chain_type_kwargs={"prompt": QA_CHAIN_PROMPT})
@@ -75,8 +83,18 @@ QA_CHAIN_PROMPT = PromptTemplate(input_variables=["context", "question"], templa
 from langchain.memory import ConversationBufferMemory
 memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
 
-from langchain.chains import ConversationalRetrievalChain
-chat = ConversationalRetrievalChain.from_llm(llm, retriever=vectorstore.as_retriever(), memory=memory)
+
+memory.save_context({"input": "Hola mi nombre es jesus y vivo en Peru"}, {"output": "Ok cool"})
+
+print('MEMORY ----------------------- ')
+
+
+chain_kwargs = {
+    "prompt": QA_CHAIN_PROMPT,
+}
+chat = ConversationalRetrievalChain.from_llm(llm, retriever=vectorstore.as_retriever(), memory=memory, combine_docs_chain_kwargs=chain_kwargs)
+
+print(chat.memory)
 
 result = chat({"question": question})
 
