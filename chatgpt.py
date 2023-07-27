@@ -6,10 +6,10 @@ from langchain.chat_models import ChatOpenAI
 from langchain.chains import ConversationalRetrievalChain
 from langchain.document_loaders import Docx2txtLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.vectorstores import Chroma
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.prompts import PromptTemplate
 from langchain.memory import ConversationBufferMemory
+from langchain.vectorstores.redis import Redis
 
 os.environ["OPENAI_API_KEY"] = constants.APIKEY
 
@@ -45,9 +45,19 @@ data = loader.load()
 # Split
 text_splitter = RecursiveCharacterTextSplitter(chunk_size = 1000, chunk_overlap = 0)
 all_splits = text_splitter.split_documents(data)
+embedding=OpenAIEmbeddings()
 
 # Store 
-vectorstore = Chroma.from_documents(documents=all_splits, embedding=OpenAIEmbeddings())
+# rds = Redis.from_documents(documents=all_splits, embedding=embedding, redis_url="redis://localhost:6379", index_name="link")
+
+# Load from existing index
+rds = Redis.from_existing_index(embedding=embedding, redis_url="redis://localhost:6379", index_name="link")
+
+# results = rds.similarity_search(question)
+# print(results[0].page_content)
+
+# sys.exit(1) 
+# vectorstore = Chroma.from_documents(documents=all_splits, )
 
 # Build prompt
 template = prompt.template
@@ -63,7 +73,7 @@ for input, output in memoryHistory:
 chain_kwargs = {
     "prompt": QA_CHAIN_PROMPT,
 }
-chat = ConversationalRetrievalChain.from_llm(llm, retriever=vectorstore.as_retriever(), memory=memory, combine_docs_chain_kwargs=chain_kwargs)
+chat = ConversationalRetrievalChain.from_llm(llm, retriever=rds.as_retriever(), memory=memory, combine_docs_chain_kwargs=chain_kwargs)
 
 result = chat({"question": question})
 
