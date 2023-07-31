@@ -38,22 +38,24 @@ if question == "refresh":
 
 #production code -------------------------------------------------------
         
-loader = Docx2txtLoader('data/Valia-qa.docx')
 llm = ChatOpenAI(model_name="gpt-3.5-turbo", temperature=0)
-data = loader.load()
 
-# Split
-text_splitter = RecursiveCharacterTextSplitter(chunk_size = 1000, chunk_overlap = 0)
-all_splits = text_splitter.split_documents(data)
-embedding=OpenAIEmbeddings()
 
 # Store 
-# rds = Redis.from_documents(documents=all_splits, embedding=embedding, redis_url="redis://localhost:6379", index_name="link")
+embedding=OpenAIEmbeddings()
+try:
+    # Load from existing index
+    vectorstore = Redis.from_existing_index(embedding=embedding, redis_url="redis://localhost:6379", index_name="dsds")
 
-# Load from existing index
-rds = Redis.from_existing_index(embedding=embedding, redis_url="redis://localhost:6379", index_name="link")
+except:
+    loader = Docx2txtLoader('data/Valia-qa.docx')
+    data = loader.load()
+    #Split
+    text_splitter = RecursiveCharacterTextSplitter(chunk_size = 1000, chunk_overlap = 0)
+    all_splits = text_splitter.split_documents(data)
+    vectorstore = Redis.from_documents(documents=all_splits, embedding=embedding, redis_url="redis://localhost:6379", index_name="dsds")
 
-# results = rds.similarity_search(question)
+# results = vectorstore.similarity_search(question)
 # print(results[0].page_content)
 
 # sys.exit(1) 
@@ -73,7 +75,7 @@ for input, output in memoryHistory:
 chain_kwargs = {
     "prompt": QA_CHAIN_PROMPT,
 }
-chat = ConversationalRetrievalChain.from_llm(llm, retriever=rds.as_retriever(), memory=memory, combine_docs_chain_kwargs=chain_kwargs)
+chat = ConversationalRetrievalChain.from_llm(llm, retriever=vectorstore.as_retriever(), memory=memory, combine_docs_chain_kwargs=chain_kwargs)
 
 result = chat({"question": question})
 

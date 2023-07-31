@@ -1,1 +1,1 @@
-memoryHistory = [('cuando fue fundada valia?', 'Valia fue fundada en el año 2018.'), ('por quien?', 'Valia fue fundada por Waseem y Carlos del Carpio.'), ('Por que lo hicieron?', 'No se proporciona información sobre la razón por la que se creó el Plan Profesional ValiaPro. Sin embargo, puedes obtener más información sobre los beneficios y características del plan en el siguiente enlace: [Plan Profesional ValiaPro](https://www.valia.com.mx/planes/valiapro)')]
+memoryHistory = [("'hola'", '¡Hola! ¿En qué puedo ayudarte hoy?')]
