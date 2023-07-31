@@ -66,18 +66,22 @@ template = prompt.template
 
 QA_CHAIN_PROMPT = PromptTemplate(input_variables=["context", "question"], template=template)
 
-memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
+# memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
 
 #set previous memory history
+chat_history = []
 for input, output in memoryHistory:
-    memory.save_context({"input": input}, {"output": output})
+    # memory.save_context({"input": input}, {"output": output})
+    chat_history.append((input, output))
 
 chain_kwargs = {
     "prompt": QA_CHAIN_PROMPT,
 }
-chat = ConversationalRetrievalChain.from_llm(llm, retriever=vectorstore.as_retriever(), memory=memory, combine_docs_chain_kwargs=chain_kwargs)
+#we can use any form of memory, either passing to the conversationalretrieval or to the chat params
+# chat = ConversationalRetrievalChain.from_llm(llm, retriever=vectorstore.as_retriever(), memory=memory, combine_docs_chain_kwargs=chain_kwargs)
+chat = ConversationalRetrievalChain.from_llm(llm, retriever=vectorstore.as_retriever(), combine_docs_chain_kwargs=chain_kwargs)
 
-result = chat({"question": question})
+result = chat({"question": question, "chat_history": chat_history})
 
 answer = result['answer']
 
