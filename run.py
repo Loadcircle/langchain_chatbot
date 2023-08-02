@@ -89,7 +89,7 @@ print('----------------------------------------------------')
 print(answer)
 print('----------------------------------------------------')
 
-print(type(result["source_documents"][0]))
+print(result["source_documents"])
 
 # for i in result["source_documents"]:
     # print(i)
