@@ -4,7 +4,7 @@ import constants
 import prompt
 from langchain.chat_models import ChatOpenAI
 from langchain.chains import ConversationalRetrievalChain
-from langchain.document_loaders import Docx2txtLoader
+from langchain.document_loaders import Docx2txtLoader, WebBaseLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.prompts import PromptTemplate
@@ -42,17 +42,27 @@ llm = ChatOpenAI(model_name="gpt-3.5-turbo", temperature=0)
 embedding=OpenAIEmbeddings()
 try:
     # Load from existing index
-    vectorstore = Redis.from_existing_index(embedding=embedding, redis_url="redis://localhost:6379", index_name="valia_qa")
+    vectorstore = Redis.from_existing_index(embedding=embedding, redis_url="redis://localhost:6379", index_name="valia_qa_2")
 
 except:
-    loader = Docx2txtLoader('data/Valia-qa.docx')
-    data = loader.load()
+    base_document_loader = Docx2txtLoader('data/Valia-qa.docx')
+    base_document_data = base_document_loader.load()
+    links_loader = WebBaseLoader(prompt.sources)
+    links_data = links_loader.load()
+    
+
+    print(links_data)
+
     #Split
     text_splitter = RecursiveCharacterTextSplitter(chunk_size = 1000, chunk_overlap = 0)
-    all_splits = text_splitter.split_documents(data)
-    vectorstore = Redis.from_documents(documents=all_splits, embedding=embedding, redis_url="redis://localhost:6379", index_name="valia_qa")
+    all_splits = text_splitter.split_documents([base_document_data, links_data])
+    vectorstore = Redis.from_documents(documents=all_splits, embedding=embedding, redis_url="redis://localhost:6379", index_name="valia_qa_2")
 
 # results = vectorstore.similarity_search(question)
+
+    exit()
+
+
 
 # Build prompt
 template = prompt.template
@@ -73,6 +83,9 @@ chat = ConversationalRetrievalChain.from_llm(llm, retriever=vectorstore.as_retri
 result = chat({"question": question, "chat_history": chat_history})
 
 answer = result['answer']
+
+
+# security prompt 
 
 memoryHistory.append((question, answer))
 guardar_memory_history()
