@@ -35,17 +35,14 @@ if question == "refresh":
     guardar_memory_history()
     sys.exit(1) 
 
-
-#production code -------------------------------------------------------
-        
+    
 llm = ChatOpenAI(model_name="gpt-3.5-turbo", temperature=0)
-
 
 # Store 
 embedding=OpenAIEmbeddings()
 try:
     # Load from existing index
-    vectorstore = Redis.from_existing_index(embedding=embedding, redis_url="redis://localhost:6379", index_name="dsds")
+    vectorstore = Redis.from_existing_index(embedding=embedding, redis_url="redis://localhost:6379", index_name="valia_qa")
 
 except:
     loader = Docx2txtLoader('data/Valia-qa.docx')
@@ -53,32 +50,24 @@ except:
     #Split
     text_splitter = RecursiveCharacterTextSplitter(chunk_size = 1000, chunk_overlap = 0)
     all_splits = text_splitter.split_documents(data)
-    vectorstore = Redis.from_documents(documents=all_splits, embedding=embedding, redis_url="redis://localhost:6379", index_name="dsds")
+    vectorstore = Redis.from_documents(documents=all_splits, embedding=embedding, redis_url="redis://localhost:6379", index_name="valia_qa")
 
 # results = vectorstore.similarity_search(question)
-# print(results[0].page_content)
-
-# sys.exit(1) 
-# vectorstore = Chroma.from_documents(documents=all_splits, )
 
 # Build prompt
 template = prompt.template
-
 QA_CHAIN_PROMPT = PromptTemplate(input_variables=["context", "question"], template=template)
-
-# memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
 
 #set previous memory history
 chat_history = []
 for input, output in memoryHistory:
-    # memory.save_context({"input": input}, {"output": output})
     chat_history.append((input, output))
 
 chain_kwargs = {
     "prompt": QA_CHAIN_PROMPT,
 }
-#we can use any form of memory, either passing to the conversationalretrieval or to the chat params
-# chat = ConversationalRetrievalChain.from_llm(llm, retriever=vectorstore.as_retriever(), memory=memory, combine_docs_chain_kwargs=chain_kwargs)
+
+#we can use any form of memory, either passing to the conversationalretrieval or to the chat param
 chat = ConversationalRetrievalChain.from_llm(llm, retriever=vectorstore.as_retriever(), combine_docs_chain_kwargs=chain_kwargs)
 
 result = chat({"question": question, "chat_history": chat_history})
