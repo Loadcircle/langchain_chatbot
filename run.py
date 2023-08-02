@@ -50,19 +50,14 @@ except:
     links_loader = WebBaseLoader(prompt.sources)
     links_data = links_loader.load()
     
-
-    print(links_data)
+    data = base_document_data + links_data
 
     #Split
-    text_splitter = RecursiveCharacterTextSplitter(chunk_size = 1000, chunk_overlap = 0)
-    all_splits = text_splitter.split_documents([base_document_data, links_data])
+    text_splitter = RecursiveCharacterTextSplitter(chunk_size = 1000, chunk_overlap = 50)
+    all_splits = text_splitter.split_documents(data)
     vectorstore = Redis.from_documents(documents=all_splits, embedding=embedding, redis_url="redis://localhost:6379", index_name="valia_qa_2")
 
 # results = vectorstore.similarity_search(question)
-
-    exit()
-
-
 
 # Build prompt
 template = prompt.template
@@ -78,7 +73,7 @@ chain_kwargs = {
 }
 
 #we can use any form of memory, either passing to the conversationalretrieval or to the chat param
-chat = ConversationalRetrievalChain.from_llm(llm, retriever=vectorstore.as_retriever(), combine_docs_chain_kwargs=chain_kwargs)
+chat = ConversationalRetrievalChain.from_llm(llm, retriever=vectorstore.as_retriever(), combine_docs_chain_kwargs=chain_kwargs, return_source_documents = True)
 
 result = chat({"question": question, "chat_history": chat_history})
 
@@ -92,3 +87,10 @@ guardar_memory_history()
 
 print('----------------------------------------------------')
 print(answer)
+print('----------------------------------------------------')
+
+print(type(result["source_documents"][0]))
+
+# for i in result["source_documents"]:
+    # print(i)
+    # print('----------------------------------------------------')
