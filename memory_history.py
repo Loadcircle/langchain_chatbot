@@ -1,1 +1,1 @@
-memoryHistory = [('Hola como estas?', 'Hola, estoy aquí para ayudarte. ¿En qué puedo ayudarte hoy?'), ('hola', 'Puedo ayudarte con cualquier consulta o duda que tengas sobre el Plan Profesional ValiaPro.')]
+memoryHistory = [('hola, me puedes ayudar?', '¡Hola! Claro, estoy aquí para ayudarte. ¿En qué puedo asistirte?'), ('Que es Valia?', 'Valia es una empresa de software y tecnología especialmente diseñada para agentes inmobiliarios. Fue fundada en 2018 en USA con el objetivo de desarrollar soluciones digitales para agentes de todo el mundo, especialmente en Latinoamérica.')]

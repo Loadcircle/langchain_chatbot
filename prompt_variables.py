@@ -87,21 +87,48 @@ sources = [
 
 link_sources = [item["source"] for item in sources]
 
-link_validator_template = """Dada la siguiente pregunta, determina cual de los siguientes enlaces \
-  segun su descripcion, es mas acertado para encontrar la respuesta a la pregunta
+link_validator_template =  """Given a raw text input \
+    select the link best suited for the input. \
+    You will be given the available links and a \
+    description of what the link is best suited for. \
 
-  << FORMATTING >>
-  retorna el enlace en una sola linea de texto, sin ningun tipo de informacion adicional\
-  por ejemplo: si determinas que la pregunta es sobre como encontrar inmuebles retorna \
-  "https://blog.valiapro.com/como-encontrar-inmuebles-de-otros-agentes-en-valia"
-  si consideras que no hay un enlace que responda de forma apropiada la pregunta simplemente retorna "NONE"\
-  
+    << FORMATTING >>
+    Return a plain text formatted to look like:
+    "link": string \ only the link, remove any text that is not part of the link to use or "NONE"
 
-  recuerda: no intentes crear enlaces, si no estas seguro solo retorna "NONE"\
-  los enlaces deben ser solo uno de los indicados abajo\
 
-  << CANDIDATE sources >>
-  {sources}
+    REMEMBER: "source" MUST be one of the candidate links, just the link, no the description or any other text \
+    specified below OR it can be "NONE" if the input is not\
+    well suited for any of the candidate links.
 
-  << QUESTION >>
-  {{question}} """
+    << CANDIDATE LINKS >>
+    {sources}
+
+    << INPUT >>
+    {{input}}
+
+    << OUTPUT (remember just return a plain text link, remove anything that is not part of the link or return "NONE")>>"""
+
+
+validator_template = """
+    Eres un verificador de informacion, dado el siguiente contexto debes verificar que la respuesta dada por un asistente\
+    es veraz y factual. Si la respuesta es correcta dado el contexto, verifica que la respuesta cumpla con los siguientes parametros:\
+        1 - No debe tener mas de 400 caracteres
+        2 - Debe estar escrita en un lenguaje humano natural
+        3 - Debe ser un lenguaje amistoso y educado 
+    
+    Si la informacion es factual y veraz dado el contexto, asegurate de que cumpla los 3 parametros adicionales, haz las moficaciones\
+    necesarias, siempre manteniendo un lenguaje amistoso y educado. Si no es necesario retorna la respuesta tal cual la recibiste
+
+    Si la informacion no es factual y veraz, realiza las correcciones necesarias, si en el contexto no tienes la informacion necesaria\
+    retorna un mensaje educado indicando que no lo sabes 
+    
+    << contexto >>
+    {context}
+
+    << respuesta >>
+    {question}
+
+    << OUTPUT (recuerda, verifica que la respuesta compla con los parametros, no hagas modificaciones innecesarias, \
+    si comple con los parametros retorna la respuesta tal cual la has recibido) >>
+"""

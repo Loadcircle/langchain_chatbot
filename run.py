@@ -75,51 +75,73 @@ def run_qa(question):
     }
 
     #we can use any form of memory, either passing to the conversationalretrieval or to the chat param
+    
     chat = ConversationalRetrievalChain.from_llm(llm, retriever=vectorstore.as_retriever(), combine_docs_chain_kwargs=chain_kwargs, return_source_documents = True)
 
     result = chat({"question": question, "chat_history": chat_history})
 
     answer = result['answer']
 
-    # security prompt 
-
     memoryHistory.append((question, answer))
     guardar_memory_history()
 
-    print('----------------------------------------------------')
-    print(answer)
-    print('----------------------------------------------------')
+    try:
+        source = result["source_documents"][0].metadata['source']
+    except (KeyError, TypeError):
+        print("Error", KeyError, TypeError)
+        source = None
+    
+    response = {
+        "question": question,
+        "answer": answer,
+        "source": source
+    }
 
-    print(result["source_documents"])
+    security_model(response, vectorstore)
 
-    # for i in result["source_documents"]:
-        # print(i)
-        # print('----------------------------------------------------')
-
+    return response
 
 from langchain.prompts import ChatPromptTemplate
 from langchain.chains import LLMChain
 
 def get_link(question):    
     llm = ChatOpenAI(temperature=0)
-    print('here')
+    
     #links format for the model 
-    sources = [f"{p['source']}: {p['description']}" for p in prompt_variables.sources]
+    sources = [f"<<{p['source']}>>: {p['description']}" for p in prompt_variables.sources]
+    
     sources_str = "\n".join(sources)
 
     validator_template = prompt_variables.link_validator_template.format(
         sources=sources_str
     )
 
-    print(validator_template)
-
     prompt = ChatPromptTemplate.from_template(validator_template)
     chain = LLMChain(llm=llm, prompt=prompt)
     
     chat_response = chain.run(question)
 
-    print(chat_response)
+    if chat_response == 'NONE':
+        return None
+    else:
+        return chat_response
+
+from langchain.chains import RetrievalQA
+def security_model(response, vectorstore):
+
+    llm = ChatOpenAI(model_name="gpt-3.5-turbo", temperature=0)
+    
+    template = prompt_variables.validator_template
+    
+    QA_CHAIN_PROMPT = PromptTemplate.from_template(template=template)
+
+    qa_chain = RetrievalQA.from_chain_type(llm, retriever=vectorstore.as_retriever(), chain_type_kwargs={"prompt": QA_CHAIN_PROMPT})
+    
+    result = qa_chain({"query": response["answer"]})
+    
+    print(result)
+    return
 
 
-# get_link(question)
 run_qa(question)
+print('link from get link = ', get_link(question))
