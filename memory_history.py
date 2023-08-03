@@ -1,1 +1,1 @@
-memoryHistory = [('Hola como estas?', 'Hola, estoy aquí para ayudarte. ¿En qué puedo ayudarte hoy?')]
+memoryHistory = [('Hola como estas?', 'Hola, estoy aquí para ayudarte. ¿En qué puedo ayudarte hoy?'), ('hola', 'Puedo ayudarte con cualquier consulta o duda que tengas sobre el Plan Profesional ValiaPro.')]
