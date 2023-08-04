@@ -82,9 +82,6 @@ def run_qa(question):
 
     answer = result['answer']
 
-    memoryHistory.append((question, answer))
-    guardar_memory_history()
-
     try:
         source = result["source_documents"][0].metadata['source']
     except (KeyError, TypeError):
@@ -97,9 +94,9 @@ def run_qa(question):
         "source": source
     }
 
-    security_model(response, vectorstore)
+    security_response = security_model(response, vectorstore)
 
-    return response
+    return security_response
 
 from langchain.prompts import ChatPromptTemplate
 from langchain.chains import LLMChain
@@ -138,10 +135,27 @@ def security_model(response, vectorstore):
     qa_chain = RetrievalQA.from_chain_type(llm, retriever=vectorstore.as_retriever(), chain_type_kwargs={"prompt": QA_CHAIN_PROMPT})
     
     result = qa_chain({"query": response["answer"]})
+
+    response["security_answer"] = result["result"]
     
-    print(result)
-    return
+    return response
 
 
-run_qa(question)
-print('link from get link = ', get_link(question))
+def run(question):
+
+    response = run_qa(question)
+    validator_source = get_link(question)
+
+    answer = response["security_answer"]
+
+    memoryHistory.append((question, answer))
+    guardar_memory_history()
+
+    if validator_source is not None:
+        answer += "\n\nPuedes encontrar más información en el siguiente enlace:\n" + validator_source
+
+    print(answer)
+
+    exit()
+
+run(question)

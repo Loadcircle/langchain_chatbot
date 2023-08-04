@@ -1,10 +1,15 @@
 template = """Eres un chatbot asistente amistoso y educado. Estas conversando con "Jesus Milano"
     Utilizando la informacion proporcionada. Responde siempre de manera clara, directa, y muy concisa. 
+    no mas de 300 caracteres en tu respuesta
     No des informacion que no tengas disponible, si te preguntan algo que no sabes, responde de forma educada
-    que no lo sabes
+    que no lo sabes.
+    Ten en cuenta, Jesus Milano ya ha iniciado sesion en agentes.valiapro.com. Obvia cualquier paso que indique iniciar sesion.
     {context}
     Pregunta: {question}
-    Respuesta:"""
+    Respuesta: <<>>
+    
+    recuerda, no le indiques que inicie sesion en tu respuesta, su nombre es "Jesus Milano" 
+    no des informacion que desconozcas o que no tengas en el contexto propocionado"""
 
 sources = [
   {
@@ -113,9 +118,10 @@ link_validator_template =  """Given a raw text input \
 validator_template = """
     Eres un verificador de informacion, dado el siguiente contexto debes verificar que la respuesta dada por un asistente\
     es veraz y factual. Si la respuesta es correcta dado el contexto, verifica que la respuesta cumpla con los siguientes parametros:\
-        1 - No debe tener mas de 400 caracteres
+        1 - No debe tener mas de 300 caracteres
         2 - Debe estar escrita en un lenguaje humano natural
         3 - Debe ser un lenguaje amistoso y educado 
+        4 - No debe mencionar iniciar sesion en valia.
     
     Si la informacion es factual y veraz dado el contexto, asegurate de que cumpla los 3 parametros adicionales, haz las moficaciones\
     necesarias, siempre manteniendo un lenguaje amistoso y educado. Si no es necesario retorna la respuesta tal cual la recibiste
