@@ -123,7 +123,7 @@ validator_template = """
         3 - Debe ser un lenguaje amistoso y educado 
         4 - No debe mencionar iniciar sesion en valia.
     
-    Si la informacion es factual y veraz dado el contexto, asegurate de que cumpla los 3 parametros adicionales, haz las moficaciones\
+    Si la informacion es factual y veraz dado el contexto, asegurate de que cumpla los 4 parametros. Haz las modificaciones\
     necesarias, siempre manteniendo un lenguaje amistoso y educado. Si no es necesario retorna la respuesta tal cual la recibiste
 
     Si la informacion no es factual y veraz, realiza las correcciones necesarias, si en el contexto no tienes la informacion necesaria\
