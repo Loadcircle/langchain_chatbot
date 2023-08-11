@@ -173,3 +173,26 @@ run(question)
 
 
 #APPRAISAL
+def search_listing_model(question):
+
+    llm = ChatOpenAI(model_name="gpt-3.5-turbo", temperature=0)
+    template = prompt_variables.search_template
+
+    prompt = PromptTemplate(template=template, input_variables=["input"])
+
+    # memory = ConversationSummaryBufferMemory(llm=llm, max_token_limit=100)
+
+    # for input, output in memoryHistory:
+    #     memory.save_context({"input": input}, {"output": output})
+        
+    conversation = ConversationChain(
+        llm=llm, 
+        prompt=prompt,
+        verbose=True
+    )
+
+    response = conversation.predict(input=question)
+
+    print(response)
+
+    return
