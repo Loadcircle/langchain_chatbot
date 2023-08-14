@@ -158,7 +158,7 @@ def run(question):
 
     exit()
 
-run(question)
+# run(question)
 
 
 
@@ -173,26 +173,66 @@ run(question)
 
 
 #APPRAISAL
+from langchain.chains import ConversationChain
+from langchain.memory import ConversationSummaryBufferMemory
 def search_listing_model(question):
 
     llm = ChatOpenAI(model_name="gpt-3.5-turbo", temperature=0)
     template = prompt_variables.search_template
 
-    prompt = PromptTemplate(template=template, input_variables=["input"])
+    prompt = PromptTemplate(template=template, input_variables=["history", "input"])
 
-    # memory = ConversationSummaryBufferMemory(llm=llm, max_token_limit=100)
+    print(prompt)
 
-    # for input, output in memoryHistory:
-    #     memory.save_context({"input": input}, {"output": output})
+    memory = ConversationSummaryBufferMemory(llm=llm, max_token_limit=400)
+
+    for input, output in memoryHistory:
+        memory.save_context({"input": input}, {"output": output})
         
     conversation = ConversationChain(
-        llm=llm, 
         prompt=prompt,
-        verbose=True
+        llm=llm, 
+        verbose=True,
+        memory=memory,
     )
 
     response = conversation.predict(input=question)
 
-    print(response)
+    if 'COMPLETED' in response:
+        print('========procesando valuacion=======')
+    else:         
+        print(response)
+
+    memoryHistory.append((question, response))
+    guardar_memory_history()
 
     return
+
+# search_listing_model(question)
+
+
+
+def get_listing_data(question):    
+    question = """
+    aca esta la informacion final
+    1. Dirección: Miraflores
+    2. Tipo de listado: Departamento
+    3. Tipo de operación: Venta
+    4. Área total: 81 metros cuadrados
+    5. Área construida: 81 metros cuadrados
+    6. Antigüedad: 12 años
+
+    COMPLETED"""
+    
+    llm = ChatOpenAI(temperature=0)
+    
+    validator_template = prompt_variables.search_parser
+
+    prompt = ChatPromptTemplate.from_template(validator_template)
+    chain = LLMChain(llm=llm, prompt=prompt)
+        
+    chat_response = chain.run(question)
+
+    print(chat_response)
+
+get_listing_data(question)
