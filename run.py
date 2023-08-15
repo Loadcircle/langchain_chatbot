@@ -24,6 +24,8 @@ else:
     print("Se debe indicar una pregunta.")
     sys.exit(1) 
 
+def limpiar_consola():
+    os.system('cls' if os.name == 'nt' else 'clear')
 
 def guardar_memory_history():
     # Guardar la variable memoryHistory en el archivo memory_history.py
@@ -34,6 +36,7 @@ if question == "refresh":
     print("Memoria eliminada")
     memoryHistory = []
     guardar_memory_history()
+    limpiar_consola()
     sys.exit(1) 
 
 
@@ -171,59 +174,9 @@ def run(question):
 
 
 
-
-#APPRAISAL
-from langchain.chains import ConversationChain
-from langchain.memory import ConversationSummaryBufferMemory
-def search_listing_model(question):
-
-    llm = ChatOpenAI(model_name="gpt-3.5-turbo", temperature=0)
-    template = prompt_variables.search_template
-
-    prompt = PromptTemplate(template=template, input_variables=["history", "input"])
-
-    print(prompt)
-
-    memory = ConversationSummaryBufferMemory(llm=llm, max_token_limit=400)
-
-    for input, output in memoryHistory:
-        memory.save_context({"input": input}, {"output": output})
-        
-    conversation = ConversationChain(
-        prompt=prompt,
-        llm=llm, 
-        verbose=True,
-        memory=memory,
-    )
-
-    response = conversation.predict(input=question)
-
-    if 'COMPLETED' in response:
-        print('========procesando valuacion=======')
-    else:         
-        print(response)
-
-    memoryHistory.append((question, response))
-    guardar_memory_history()
-
-    return
-
-# search_listing_model(question)
-
-
-
+import json
 def get_listing_data(question):    
-    question = """
-    aca esta la informacion final
-    1. Dirección: Miraflores
-    2. Tipo de listado: Departamento
-    3. Tipo de operación: Venta
-    4. Área total: 81 metros cuadrados
-    5. Área construida: 81 metros cuadrados
-    6. Antigüedad: 12 años
 
-    COMPLETED"""
-    
     llm = ChatOpenAI(temperature=0)
     
     validator_template = prompt_variables.search_parser
@@ -235,4 +188,88 @@ def get_listing_data(question):
 
     print(chat_response)
 
-get_listing_data(question)
+    data = json.loads(chat_response)
+
+    print(data)
+
+    print('Listo, aca puedes ver los inmuebles para la busqueda que solicitaste: ')
+    print(get_url(data))
+
+import urllib.parse
+def get_url(property_data):
+    base_url = "https://agentes.staging-frontend.valia.pe/home/buscarInmuebles/?"
+    filtered = "true"
+    
+    params = {"filtered": filtered}
+    
+        
+    for attr, value in property_data.items():
+        # Validar si el valor existe y no es None
+        if value is not None:
+
+            # Tratar "operation_type" y "listing_type" para mayúsculas iniciales
+            if attr in ["operation_type", "listing_type"]:
+                value = value.capitalize()
+            
+            # Convertir "total_area" y "built_area" a enteros antes de agregar
+            if attr in ["total_area", "built_area"]:
+                value = int(value)
+                attr += "_min"
+
+            params[attr] = value
+    
+    # Codificar los parámetros y construir la URL
+    encoded_params = urllib.parse.urlencode(params)
+    url = f"{base_url}{encoded_params}"
+    
+    return url
+
+
+#APPRAISAL
+from langchain.chains import ConversationChain
+from langchain.memory import ConversationSummaryBufferMemory
+def search_listing_model(question):
+
+    llm = ChatOpenAI(model_name="gpt-3.5-turbo", temperature=0)
+    template = prompt_variables.search_template
+
+    prompt = PromptTemplate(template=template, input_variables=["history", "input"])
+
+    memory = ConversationSummaryBufferMemory(llm=llm, max_token_limit=400)
+
+    # for input, output in memoryHistory:
+    #     memory.save_context({"input": input}, {"output": output})
+        
+    if memoryHistory:  # Verifica si el arreglo no está vacío
+        last_input, last_output = memoryHistory[-1]  # Obtén la última posición
+        memory.save_context({"input": last_input}, {"output": last_output})
+
+    conversation = ConversationChain(
+        prompt=prompt,
+        llm=llm, 
+        verbose=True,
+        memory=memory,
+    )
+
+    response = conversation.predict(input=question)
+
+    print(response)
+
+    if 'COMPLETED' in response:
+        print('========procesando BUSQUEDA=======')
+        get_listing_data(response)
+    # else:         
+
+    memoryHistory.append((question, response))
+    guardar_memory_history()
+
+    return
+
+search_listing_model(question)
+
+
+#TODO WE MUST CREATE A ROUTER THAT READ THE INTENTION AND CHECK PREVIOUS INTENTION
+
+#TODO WE NEED TO CREATE A VALIDAROT THAT BASE ON THE CURRENT INTENTION VALIDATE THE MINIMUN DATA TO GENERATE THE RESPONSE 
+
+#TODO WE NEED O CREATE A VALIDATOR TO DEFINE THE MINIMUN DATA BASE ON THE LISTING TYPE 
