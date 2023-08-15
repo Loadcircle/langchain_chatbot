@@ -18,11 +18,7 @@ try:
 except ImportError:
     memoryHistory = []
 
-if len(sys.argv) > 1:
-    question = sys.argv[1]
-else:
-    print("Se debe indicar una pregunta.")
-    sys.exit(1) 
+question = "The logic is simple. If you are a subscriber, you can get client leads through valia.la for not only your properties, but also other inbound leads looking to do valuations, searching for agents, and sellers. We also leverage similar listings to yours to get you leads if the listing agent passes on them. The priority for listings will always be the listing agent. If you are not a subscriber, you can only get client leads for your listings directly. When you receive a lead, we have prequalified them by asking a series of questions and getting answers. We make those available to you to help you decide if you want to take the lead. If you decide you want the lead, we charge 10$ upfront for the connection with their contact info. You do not have to pay us 10percent of commission anymore. The only thing you pay is 10$."
 
 
 def guardar_memory_history():
@@ -146,15 +142,7 @@ def run(question):
     response = run_qa(question)
     validator_source = get_link(question)
 
-    answer = response["security_answer"]
-
-    memoryHistory.append((question, answer))
-    guardar_memory_history()
-
-    if validator_source is not None:
-        answer += "\n\nPuedes encontrar más información en el siguiente enlace:\n" + validator_source
-
-    print(answer)
+    print(response["answer"])
 
     exit()
 

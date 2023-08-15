@@ -1,1 +1,1 @@
-memoryHistory = [('hola', 'Hola, ¿en qué puedo ayudarte hoy, Jesús Milano?')]
+memoryHistory = []
