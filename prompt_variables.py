@@ -170,10 +170,9 @@ validator_template = """
 search_template=""""
     A partir de ahora, encarna el papel de una Asistente de busqueda de Inmuebles en Perú llamada Valia Copilot, \
     con una profunda experiencia en extraer y comprender los detalles de los listados de inmuebles. \
-    A medida que interactúas, asegúrate de que cada pieza de información extraída se liste \
-    de forma estructurada en cada respuesta posterior al comienzo dela nueva respuesta, actualizándola a medida que el usuario proporcione \
-    más información. Debes mostrar siempre esta lista solo de los datos que ya tienes. Participa en un diálogo continuo y paso a paso, guiando al usuario para \
-    proporcionar todos los detalles necesarios del inmueble.
+    A medida que interactúas, asegúrate de que cada pieza de información extraída se muestre listada al inicio de cada respuesta, sin excepcion, \
+    actualizándola a medida que el usuario proporcione más información. Debes mostrar siempre esta lista solo de los datos que ya tienes. \
+    Participa en un diálogo continuo y paso a paso, guiando al usuario para proporcionar todos los detalles necesarios del inmueble.
 
     Los datos pueden venir en cualquier orden, muestra siempre lo que ya has conseguido y solicita lo que te falta:
 
@@ -220,3 +219,78 @@ search_parser = """
 
     << OUTPUT (remember return a formated json)>>
 """
+
+router_initial_intention_template = """Given a raw text input to a \
+    language model select the model best suited for the input. \
+    You will be given the names of the available models and a \
+    description of what the model is best suited for. \
+
+    << FORMATTING >>
+    Return a markdown code snippet with a JSON object formatted to look like:
+    
+    {{{{
+        "intention": string \ name of the model to use or "DEFAULT"
+        "next_input": string \ the original input
+    }}}}
+    
+
+    REMEMBER: "intention" MUST be one of the candidate models \
+    names specified below OR it can be "DEFAULT" if the input is not\
+    well suited for any of the candidate models.
+    REMEMBER: "next_input" must be the original input
+
+    << CANDIDATE MODELS >>
+    {intentions}
+
+    << INPUT >>
+    {{input}}
+
+    << OUTPUT (remember to include the ```json)>>"""
+
+router_intention_change_template = """Given a raw text input to a \
+    language model select the model best suited for the input considering the previous intention. \
+    The user is already talking with a model with a previous intention set, you have to review the input \
+    and determine if the user has explicitly change their intention.
+    
+    You will be given the names of the available models and a \
+    description of what the model is best suited for. \
+
+    << FORMATTING >>
+    Return a markdown code snippet with a JSON object formatted to look like:
+
+    {{{{
+        "intention": string \ name of the model to use or "DEFAULT"
+        "next_input": string \ the original input
+    }}}}
+
+
+    REMEMBER: "intention" MUST be one of the candidate models \
+    names specified below OR the previous intention if the input is not\
+    well suited for any of the candidate models.
+    REMEMBER: "next_input" must be the original input
+
+    << CANDIDATE MODELS >>
+    {intentions}
+
+    << PREVIOUS INTENTION >>
+    {previous_intention}
+
+    << INPUT >>
+    {{input}}
+
+    << OUTPUT (remember to include the ```json)>>"""
+
+prompt_infos = [
+    {
+        "name": "faq", 
+        "description": "Good for assit and answer questions about Valia", 
+    },
+    {
+        "name": "search_listings", 
+        "description": "Good for Search listings in the search tool", 
+    },
+    {
+        "name": "valuation", 
+        "description": "Good for do valuations and reports of listings or zones", 
+    },
+]

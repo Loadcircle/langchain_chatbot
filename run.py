@@ -14,9 +14,10 @@ from langchain.vectorstores.redis import Redis
 os.environ["OPENAI_API_KEY"] = constants.APIKEY
 
 try:
-    from memory_history import memoryHistory
+    from memory_history import memoryHistory, previous_intention
 except ImportError:
     memoryHistory = []
+    previous_intention = None
 
 if len(sys.argv) > 1:
     question = sys.argv[1]
@@ -27,10 +28,15 @@ else:
 def limpiar_consola():
     os.system('cls' if os.name == 'nt' else 'clear')
 
-def guardar_memory_history():
+def guardar_memory_history(previous_intention = None):
     # Guardar la variable memoryHistory en el archivo memory_history.py
     with open('memory_history.py', 'w', encoding='utf-8') as file:
-        file.write(f"memoryHistory = {memoryHistory}")
+        file.write(f"memoryHistory = {memoryHistory}\n")
+         
+        if previous_intention is not None:
+            file.write(f"previous_intention = '{previous_intention}'")
+        else:
+            file.write("previous_intention = None")
 
 if question == "refresh":
     print("Memoria eliminada")
@@ -174,27 +180,6 @@ def run(question):
 
 
 
-import json
-def get_listing_data(question):    
-
-    llm = ChatOpenAI(temperature=0)
-    
-    validator_template = prompt_variables.search_parser
-
-    prompt = ChatPromptTemplate.from_template(validator_template)
-    chain = LLMChain(llm=llm, prompt=prompt)
-        
-    chat_response = chain.run(question)
-
-    print(chat_response)
-
-    data = json.loads(chat_response)
-
-    print(data)
-
-    print('Listo, aca puedes ver los inmuebles para la busqueda que solicitaste: ')
-    print(get_url(data))
-
 import urllib.parse
 def get_url(property_data):
     base_url = "https://agentes.staging-frontend.valia.pe/home/buscarInmuebles/?"
@@ -202,7 +187,6 @@ def get_url(property_data):
     
     params = {"filtered": filtered}
     
-        
     for attr, value in property_data.items():
         # Validar si el valor existe y no es None
         if value is not None:
@@ -224,6 +208,30 @@ def get_url(property_data):
     
     return url
 
+import json
+def get_listing_data(question):    
+
+    llm = ChatOpenAI(temperature=0)
+    
+    validator_template = prompt_variables.search_parser
+
+    prompt = ChatPromptTemplate.from_template(validator_template)
+    chain = LLMChain(llm=llm, prompt=prompt)
+        
+    chat_response = chain.run(question)
+
+    data = json.loads(chat_response)
+
+    print('====== GET LISTING DATA RESPONSE =======')
+
+    print(data)
+    
+    required_attributes = ['address', 'operation_type', 'listing_type']
+    if all(attributes in data for attributes in required_attributes):
+        return 'Listo, aca puedes ver los inmuebles para la busqueda que solicitaste: \n', get_url(data)
+
+    else:
+        return None
 
 #APPRAISAL
 from langchain.chains import ConversationChain
@@ -247,29 +255,72 @@ def search_listing_model(question):
     conversation = ConversationChain(
         prompt=prompt,
         llm=llm, 
-        verbose=True,
+        # verbose=True,
         memory=memory,
     )
 
     response = conversation.predict(input=question)
-
+    print('========SEARCH LISTING MODEL RESPONSE=======')
     print(response)
+    
+    listing_data_response = get_listing_data(response)
 
-    if 'COMPLETED' in response:
-        print('========procesando BUSQUEDA=======')
-        get_listing_data(response)
-    # else:         
+    if listing_data_response is not None:
+        print(listing_data_response)
+    # else:
+    #     print(response)
 
     memoryHistory.append((question, response))
-    guardar_memory_history()
+    guardar_memory_history('search_listings')
 
     return
 
-search_listing_model(question)
-
-
-#TODO WE MUST CREATE A ROUTER THAT READ THE INTENTION AND CHECK PREVIOUS INTENTION
-
-#TODO WE NEED TO CREATE A VALIDAROT THAT BASE ON THE CURRENT INTENTION VALIDATE THE MINIMUN DATA TO GENERATE THE RESPONSE 
+# search_listing_model(question)
 
 #TODO WE NEED O CREATE A VALIDATOR TO DEFINE THE MINIMUN DATA BASE ON THE LISTING TYPE 
+
+
+
+def router(question):
+    #Router definition
+    llm = ChatOpenAI(temperature=0)
+        
+    #destinations format for the model 
+    intentions = [f"{p['name']}: {p['description']}" for p in prompt_variables.prompt_infos]
+    intentions_str = "\n".join(intentions)
+
+    if previous_intention is not None:
+
+        router_template = prompt_variables.router_intention_change_template.format(
+            intentions=intentions_str,
+            previous_intention=previous_intention,
+        )
+        
+    else:
+        router_template = prompt_variables.router_initial_intention_template.format(
+            intentions=intentions_str,
+        )
+
+
+    prompt = ChatPromptTemplate.from_template(router_template)
+    chain = LLMChain(llm=llm, prompt=prompt)
+
+    chat_response = chain.run(question)
+    
+    formated_response = json.loads(chat_response)
+
+    print('================= router response ===================')
+    print(formated_response)
+
+    next_intention = formated_response["intention"]
+    next_input = formated_response["next_input"]
+
+    if next_intention == "faq" or next_intention == "DEFAULT": 
+        print('====== PREGUNTAS Y RESPUESTAS ======')
+        
+    elif next_intention == "search_listings":
+        search_listing_model(next_input)
+    elif next_intention == "valuation":
+        print('====== VALUACION ======')
+
+router(question)
